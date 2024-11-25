@@ -1074,6 +1074,8 @@ impl QuantumSim {
                         .fold(SparseState::default(), |mut accum, (index, value)| {
                             if ctls.iter().all(|c| index.bit(*c)) {
                                 accum.insert(index, value * factor);
+                            } else {
+                                accum.insert(index, value);
                             }
                             accum
                         });
@@ -1532,6 +1534,20 @@ mod tests {
             sim.joint_probability(&[q])
         ));
         assert!(!sim.joint_probability(&[q]).is_nearly_zero());
+    }
+
+    /// Verifies that when a controlled Ry(PI) is recognized as equivalent a
+    /// controlled -iY (and handed as such), the state vector is not corrupted
+    #[test]
+    fn test_mcry_pi_iphase() {
+        let mut sim = QuantumSim::new(None);
+        let q1 = sim.allocate();
+        let q2 = sim.allocate();
+        sim.h(q1);
+        sim.x(q1);
+        sim.mcry(&[q1], PI, q2);
+        sim.x(q1);
+        assert!(almost_equal(sim.joint_probability(&[q1, q2]), 1.0));
     }
 
     /// Utility for testing operation equivalence.
